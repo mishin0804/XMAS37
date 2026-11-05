@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>小狗的聖誕大冒險</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Press+Start+2P&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#232f57;--card:#fdf6ff;--ink:#2b2146;--red:#ef4b5f;--mint:#5fd8b4;--gold:#ffd166;--pink:#ff9ec4;--mut:#6c6490}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--ink);font:17px/1.65 "DotGothic16","Noto Sans TC",sans-serif;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+#snow{position:fixed;inset:0;pointer-events:none;z-index:0;image-rendering:pixelated}
+.wrap{position:relative;z-index:1;max-width:520px;margin:0 auto;padding:18px 14px 50px}
+.top{display:flex;justify-content:space-between;align-items:center;color:#fff;margin-bottom:12px}
+.px{font-family:"Press Start 2P","DotGothic16",monospace;font-size:11px}
+.dots{display:flex;gap:6px}
+.dots i{width:16px;height:16px;border:3px solid #fff;background:transparent}
+.dots i.on{background:var(--gold);border-color:var(--gold)}
+.dots i.now{background:var(--pink);border-color:var(--pink)}
+.card{background:var(--card);border:4px solid var(--ink);box-shadow:6px 6px 0 rgba(0,0,0,.35);padding:14px}
+.guide{display:flex;gap:10px;align-items:flex-start}
+.dog{width:84px;height:84px;flex:none;color:var(--ink)}
+.dog *{stroke:var(--ink)}
+.dog .hat{fill:var(--red)}.dog .w{fill:#fff}.dog .f{fill:var(--ink)}.dog .t{fill:#e8cb9f}.dog .e{fill:#c9a06a}.dog .pk{fill:#ffb3c1;stroke:none}
+.hop{animation:hop .5s steps(4)}
+@keyframes hop{50%{transform:translateY(-12px)}}
+.say{position:relative;flex:1;background:#fff;border:3px solid var(--ink);padding:8px 12px;white-space:pre-wrap;word-break:break-word}
+.say::before{content:"";position:absolute;left:-12px;top:18px;border:6px solid transparent;border-right:9px solid var(--ink);border-left:0}
+.say b{display:block;color:var(--red)}
+.say.bad{background:#ffe3e8}
+#puzzle{margin:16px 0 6px;display:flex;justify-content:center}
+form{display:flex;gap:8px;margin-top:10px}
+input{flex:1;min-width:0;font:inherit;font-size:18px;padding:8px 10px;border:3px solid var(--ink);background:#fff;color:var(--ink)}
+button{font:inherit;cursor:pointer;color:var(--ink);background:var(--mint);border:3px solid var(--ink);padding:8px 14px;box-shadow:0 4px 0 var(--ink)}
+button:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
+button.sm{background:#fff;padding:4px 10px;font-size:15px}
+:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+#msg{min-height:1.7em;margin:8px 0 0;color:var(--red);font-weight:bold}#msg.good{color:#1f9e7a}
+.shk{animation:shk .35s}@keyframes shk{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.tools{display:flex;gap:10px;margin-top:14px}
+/* picross */
+.pg{display:grid;gap:3px;--c:46px}
+.clue{display:flex;align-items:flex-end;justify-content:center;color:var(--mut);font-size:16px;line-height:1.2;white-space:pre;text-align:center}
+.clue.row{justify-content:flex-end;padding-right:6px;align-items:center}
+.cell{width:var(--c);height:var(--c);padding:0;background:#fff;box-shadow:none;border:3px solid var(--ink)}
+.cell.on{background:var(--red)}
+.pg.win .cell.on{background:var(--gold)}
+/* morse */
+.bark{font-size:26px;line-height:1.9;text-align:center;word-break:keep-all}
+.bark span{display:inline-block;margin:0 6px;padding:0 8px;background:#fff;border:3px solid var(--ink)}
+details{margin-top:10px;font-size:15px}
+summary{cursor:pointer;color:var(--mut)}
+.leg{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.leg span{border:2px solid var(--ink);background:#fff;padding:0 6px}
+/* align */
+.al{text-align:center}
+#aout{width:min(300px,78vw);height:min(300px,78vw);image-rendering:pixelated;border:4px solid var(--ink);background:#1d1a33;border-radius:50%}
+.ctl{display:flex;gap:8px;align-items:center;justify-content:center;margin-top:10px}
+input[type=range]{flex:1;padding:0;accent-color:var(--red);height:32px}
+#deg{min-width:52px;text-align:right}
+/* final */
+#final{display:none;text-align:center}
+#final h1{font-family:"Press Start 2P",monospace;font-size:20px;line-height:1.5;color:var(--red);margin:6px 0 12px}
+#final p{white-space:pre-wrap;margin:0}
+#final .dog{width:130px;height:130px}
+#adm{display:none;margin-top:20px;border:3px dashed #fff;color:#fff;padding:10px;word-break:break-all}
+@media (prefers-reduced-motion:reduce){.hop,.shk{animation:none}}
+</style>
+</head>
+<body>
+<canvas id="snow" aria-hidden="true"></canvas>
+<div class="wrap">
+  <div class="top"><span class="px">XMAS QUEST</span><div class="dots" id="dots" aria-label="關卡進度"></div></div>
+  <div class="card" id="game">
+    <div class="guide"><div id="dog"></div><div class="say" id="say"></div></div>
+    <div id="puzzle"></div>
+    <form id="f" autocomplete="off">
+      <input id="in" aria-label="輸入答案" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="輸入答案">
+      <button type="submit">送出</button>
+    </form>
+    <p id="msg" role="status" aria-live="polite"></p>
+    <div class="tools"><button class="sm" id="hintBtn" type="button">要提示</button><button class="sm" id="resetBtn" type="button">重玩</button></div>
+  </div>
+  <div class="card" id="final">
+    <div id="fdog"></div>
+    <h1 id="fTitle"></h1>
+    <p id="fText"></p>
+  </div>
+  <div id="adm"><b>答案雜湊產生器</b>(給你自己用,測試完網址拿掉 ?make)
+    <form id="mk"><input id="mkIn" placeholder="輸入答案"><button>產生</button></form><code id="mkOut"></code></div>
+</div>
+
+<script>
+/* ============ 這裡改成你們的內容 ============
+   type 說明:
+   picross  塗格子解圖,解開自動過關(grid 用 1 和 0 畫圖案)
+   morse    小狗叫聲摩斯密碼,答案是 word
+   align    兩層玻璃對齊,旋轉到 target 角度才看得到 text,輸入 text 過關
+   text     一般輸入答案。sha 是答案的 SHA-256 雜湊(網址加 ?make 可產生)
+   提醒:picross / morse / align 的答案會寫在程式裡,是「簡易保護」;
+         text 關卡用雜湊,看原始碼也看不到。 */
+const CONFIG = {
+  intro: "汪!我是波奇。聖誕老人的禮物袋被鎖住了,\n我們一起解開 5 道謎題吧!",
+  levels: [
+    { type:"picross", title:"第 1 關:塗塗看",
+      story:"左邊和上面的數字,代表那一行有幾格連續要塗滿。\n把格子塗出圖案吧!",
+      hint:"先從數字 5 的那一行開始,整行都要塗滿。",
+      grid:["01010","11111","11111","01110","00100"],
+      ok:"哇!是愛心!第一道鎖打開了。" },
+    { type:"morse", title:"第 2 關:小狗的悄悄話",
+      story:"波奇用叫聲傳來暗號:短叫是「汪」,長叫是「嗷」,「/」代表換下一個字母。\n小提示:這是摩斯密碼喔!翻成英文單字吧。",
+      hint:"摩斯密碼是用「短」和「長」組成字母,上網查一下對照表就能解。汪 = 短,嗷 = 長。",
+      word:"XMAS",
+      ok:"翻譯成功!波奇開心地搖尾巴。" },
+    { type:"align", title:"第 3 關:魔法玻璃",
+      story:"兩片魔法玻璃疊在一起,看起來只有雜訊。\n轉動上面那片,轉到剛剛好,就會浮現 4 位數密碼!",
+      text:"1225", target:137,
+      ok:"對上了!第三道鎖打開了。" },
+    { type:"text", title:"第 4 關:GitHub 地下室",
+      story:"下一把鑰匙藏在這個 GitHub 專案裡。\n回到專案首頁,找到 secret.txt 這個檔案,點開它,把裡面的單字輸入。",
+      hint:"在專案的檔案列表裡找 secret.txt,點一下就能看到內容。",
+      sha:"4ac134964872c4b0e2027c2be20aa440fa4e699ba9c5b9f1929bdab52824e424",
+      ok:"地下室打開了!" },
+    { type:"text", title:"第 5 關:現實世界任務",
+      story:"最後一把鑰匙不在網路上!\n去找找我留給你的那張紙條,答案寫在上面。",
+      hint:"(這裡換成你藏紙條位置的線索)",
+      sha:"a1954b15a7459a2f7f6c03d87b73963830616feef7c93853fe5c05be996276bc",
+      ok:"所有鎖都解開了!" }
+  ],
+  finalTitle: "Merry Christmas!",
+  finalText: "你通關了!\n\n(這裡寫你想對他說的話)\n\n你的禮物在:(寫下禮物位置,或約會邀請)\n\n愛你的我"
+};
+/* ============ 以下是遊戲程式,通常不用改 ============ */
+const $ = id => document.getElementById(id);
+const el = (t,c,x) => { const e = document.createElement(t); if(c) e.className = c; if(x!=null) e.textContent = x; return e; };
+const norm = s => s.trim().toLowerCase().replace(/\s+/g,"");
+const DOG = '<svg viewBox="0 0 120 120" class="dog" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+ + '<path class="e" d="M24 52C11 49 6 70 14 85C23 90 31 77 31 62Z"/><path class="e" d="M96 52C109 49 114 70 106 85C97 90 89 77 89 62Z"/>'
+ + '<path class="t" d="M20 70C20 45 40 37 60 37C80 37 100 45 100 70C100 92 82 101 60 101C38 101 20 92 20 70Z"/>'
+ + '<ellipse class="pk" cx="37" cy="79" rx="6" ry="3.5"/><ellipse class="pk" cx="83" cy="79" rx="6" ry="3.5"/>'
+ + '<circle class="f" cx="46" cy="69" r="2.6"/><circle class="f" cx="74" cy="69" r="2.6"/><ellipse class="f" cx="60" cy="75" rx="4.2" ry="3"/>'
+ + '<path d="M60 78V81M60 81C57 85 53 84 52 81M60 81C63 85 67 84 68 81"/>'
+ + '<path class="hat" d="M41 43C44 23 63 16 80 26C76 34 73 40 71 43C61 39 51 39 41 43Z"/>'
+ + '<path class="w" d="M38 42C52 36 66 36 73 43C70 48 61 44 51 45C45 46 40 47 38 42Z"/><circle class="w" cx="82" cy="24" r="5"/></svg>';
+$("dog").innerHTML = DOG; $("fdog").innerHTML = DOG;
+
+async function sha(s){
+  if(!(window.crypto && crypto.subtle)) throw new Error("nocrypto");
+  const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(norm(s)));
+  return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("");
+}
+let cur = 0;
+const L = () => CONFIG.levels[cur];
+function say(title, text, bad){
+  const s = $("say"); s.className = "say" + (bad?" bad":""); s.textContent = "";
+  if(title) s.appendChild(el("b","",title)); s.appendChild(document.createTextNode(text));
+}
+function msg(t, good){ const m = $("msg"); m.textContent = t; m.className = good?"good":""; }
+function shake(){ const f = $("f"); f.classList.remove("shk"); void f.offsetWidth; f.classList.add("shk"); }
+function seeBubble(){ $("say").scrollIntoView({block:"nearest",behavior:"smooth"}); }
+addEventListener("error", e => msg("發生錯誤:" + e.message));
+function hop(){ const d = $("dog"); d.classList.remove("hop"); void d.offsetWidth; d.classList.add("hop"); }
+function dots(){ const d = $("dots"); d.innerHTML = "";
+  CONFIG.levels.forEach((_,i)=> d.appendChild(el("i", i<cur?"on":i===cur?"now":""))); }
+function save(){ try{ sessionStorage.setItem("xmasLv", cur); }catch(e){} }
+function load(){ try{ const v = parseInt(sessionStorage.getItem("xmasLv")); return isNaN(v)?0:v; }catch(e){ return 0; } }
+
+/* ---- 關卡:塗格子 ---- */
+function picross(l, done){
+  const S = l.grid.map(r=>[...r].map(c=>c==="1"?1:0)), n = S.length, m = S[0].length;
+  const runs = a => { const o=[]; let k=0; a.forEach(v=>{ if(v) k++; else if(k){ o.push(k); k=0; } }); if(k) o.push(k); return o.length?o:[0]; };
+  const st = S.map(r=>r.map(()=>0));
+  const box = el("div","pg"); box.style.gridTemplateColumns = `auto repeat(${m},var(--c))`;
+  box.appendChild(el("div"));
+  for(let c=0;c<m;c++) box.appendChild(el("div","clue",runs(S.map(r=>r[c])).join("\n")));
+  for(let r=0;r<n;r++){
+    box.appendChild(el("div","clue row",runs(S[r]).join(" ")));
+    for(let c=0;c<m;c++){
+      const b = el("button","cell"); b.type = "button"; b.setAttribute("aria-label","第"+(r+1)+"行第"+(c+1)+"列");
+      b.onclick = () => { st[r][c] ^= 1; b.classList.toggle("on"); chk(); };
+      box.appendChild(b);
+    }
+  }
+  function chk(){ if(st.every((row,r)=>row.every((v,c)=>v===S[r][c]))){ box.classList.add("win"); setTimeout(done,900); } }
+  return box;
+}
+/* ---- 關卡:狗狗摩斯密碼 ---- */
+const MORSE = {}; "A.-,B-...,C-.-.,D-..,E.,F..-.,G--.,H....,I..,J.---,K-.-,L.-..,M--,N-.,O---,P.--.,Q--.-,R.-.,S...,T-,U..-,V...-,W.--,X-..-,Y-.--,Z--..".split(",").forEach(s=>MORSE[s[0]] = s.slice(1));
+const bark = code => code.replace(/\./g,"汪").replace(/-/g,"嗷");
+function morse(l){
+  const w = el("div"), b = el("div","bark");
+  [...l.word.toUpperCase()].forEach((ch,i,a)=>{ b.appendChild(el("span","",bark(MORSE[ch]))); if(i<a.length-1) b.appendChild(document.createTextNode("/")); });
+  w.appendChild(b); return w;
+}
+/* ---- 關卡:兩層玻璃對齊 ---- */
+function align(l){
+  const N = 64, wrap = el("div","al");
+  const cv = el("canvas"); cv.id = "aout"; cv.width = cv.height = N; wrap.appendChild(cv);
+  const t = document.createElement("canvas"); t.width = t.height = N;
+  const tc = t.getContext("2d"); tc.fillStyle = "#000"; tc.fillRect(0,0,N,N); tc.fillStyle = "#fff";
+  tc.font = "bold "+Math.min(22,Math.floor(56/(l.text.length*.62)))+"px monospace"; tc.textAlign = "center"; tc.textBaseline = "middle"; tc.fillText(l.text,N/2,N/2+1);
+  const dd = tc.getImageData(0,0,N,N).data, A = new Uint8Array(N*N), B = new Uint8Array(N*N);
+  for(let i=0;i<N*N;i++){ A[i] = Math.random()<.5?1:0; B[i] = A[i] ^ (dd[i*4]>128?1:0); }
+  const cx = cv.getContext("2d"), img = cx.createImageData(N,N);
+  const sl = el("input"); sl.type = "range"; sl.min = 0; sl.max = 359; sl.value = (l.target+110)%360; sl.setAttribute("aria-label","旋轉角度");
+  const deg = el("span","px"); deg.id = "deg";
+  const m = el("button","sm","−1°"), p = el("button","sm","+1°"); m.type = p.type = "button";
+  function draw(){
+    const phi = (sl.value - l.target) * Math.PI/180, co = Math.cos(phi), si = Math.sin(phi), h = N/2;
+    for(let y=0;y<N;y++) for(let x=0;x<N;x++){
+      const o = (y*N+x)*4, dx = x+.5-h, dy = y+.5-h;
+      if(dx*dx+dy*dy > h*h){ img.data[o+3] = 0; continue; }
+      const sx = Math.floor(co*dx + si*dy + h), sy = Math.floor(-si*dx + co*dy + h);
+      const bv = (sx>=0&&sx<N&&sy>=0&&sy<N) ? B[sy*N+sx] : 0, v = A[y*N+x] ^ bv;
+      img.data[o] = v?255:29; img.data[o+1] = v?158:26; img.data[o+2] = v?196:51; img.data[o+3] = 255;
+    }
+    cx.putImageData(img,0,0); deg.textContent = sl.value + "°";
+  }
+  sl.oninput = draw; m.onclick = () => { sl.value = (+sl.value+359)%360; draw(); }; p.onclick = () => { sl.value = (+sl.value+1)%360; draw(); };
+  const ctl = el("div","ctl"); ctl.append(m,sl,p,deg); wrap.appendChild(ctl); draw(); return wrap;
+}
+
+/* ---- 流程 ---- */
+function showLevel(){
+  const l = L(), pz = $("puzzle"); pz.innerHTML = ""; dots();
+  $("in").value = ""; msg("");
+  if(l.type==="picross"){ pz.appendChild(picross(l, pass)); $("f").style.display = "none"; }
+  else{
+    $("f").style.display = "flex";
+    if(l.type==="morse") pz.appendChild(morse(l));
+    if(l.type==="align"){ pz.appendChild(align(l)); l.hint = l.hint || "角度大約落在 "+(l.target-30)+" 到 "+(l.target+30)+" 度之間,接近時中間會先變清楚。"; }
+  }
+  say(l.title, l.story);
+}
+function pass(){
+  const l = L(); hop(); cur++; save();
+  if(cur >= CONFIG.levels.length){ say("", l.ok); return win(); }
+  say("", l.ok); setTimeout(showLevel, 1100);
+}
+function win(){
+  dots(); $("game").style.display = "none";
+  $("fTitle").textContent = CONFIG.finalTitle; $("fText").textContent = CONFIG.finalText;
+  $("final").style.display = "block"; confetti();
+}
+$("f").onsubmit = async e => {
+  e.preventDefault(); const v = $("in").value;
+  if(!v.trim()){ msg("先輸入答案再按送出喔"); return; }
+  const l = L(); let ok;
+  try{
+    ok = l.type==="morse" ? norm(v)===norm(l.word) : l.type==="align" ? norm(v)===norm(l.text) : (await sha(v))===l.sha;
+  }catch(err){ msg("這個瀏覽器無法驗證答案,請用 Safari / Chrome 並透過 https 網址開啟。"); return; }
+  if(ok){ msg("答對了!", true); $("in").blur(); pass(); }
+  else{ msg("答案不對,再試試看。卡住的話按「要提示」。"); shake(); say("波奇", "汪?好像不對喔,再想想看~", true); }
+  seeBubble();
+};
+$("hintBtn").onclick = () => say("提示", L().hint || "再仔細看看題目~");
+$("resetBtn").onclick = () => { cur = 0; save(); showLevel(); };
+
+/* 管理工具 */
+if(location.search.includes("make")){
+  $("adm").style.display = "block";
+  $("mk").onsubmit = async e => { e.preventDefault(); try{ $("mkOut").textContent = await sha($("mkIn").value); }catch(x){ $("mkOut").textContent = "請在 https 環境使用"; } };
+}
+
+/* 像素雪花 */
+const cv = $("snow"), cx = cv.getContext("2d"), calm = matchMedia("(prefers-reduced-motion:reduce)").matches;
+let W, H, fl = [];
+function size(){ W = cv.width = Math.ceil(innerWidth/4); H = cv.height = Math.ceil(innerHeight/4); cv.style.width = "100%"; cv.style.height = "100%"; }
+addEventListener("resize", size); size();
+const add = (n, top, col) => { for(let i=0;i<n;i++) fl.push({x:Math.random()*W,y:top?-2:Math.random()*H,v:Math.random()*.25+.1,c:col||"#fff"}); };
+if(!calm) add(45);
+function confetti(){ if(calm) return; const cs = ["#ef4b5f","#ffd166","#5fd8b4","#ff9ec4","#fff"]; for(let i=0;i<120;i++) add(1,true,cs[i%5]); }
+(function tick(){
+  cx.clearRect(0,0,W,H);
+  fl.forEach(f=>{ f.y += f.v; if(f.y > H){ f.y = -2; f.x = Math.random()*W; } cx.fillStyle = f.c; cx.fillRect(f.x|0, f.y|0, 1, 1); });
+  requestAnimationFrame(tick);
+})();
+
+cur = Math.min(load(), CONFIG.levels.length-1);
+showLevel(); say("波奇", CONFIG.intro + "\n\n" + L().title + "\n" + L().story);
+</script>
+</body>
+</html>
