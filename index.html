@@ -8,7 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Press+Start+2P&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#232f57;--card:#fdf6ff;--ink:#2b2146;--red:#ef4b5f;--mint:#5fd8b4;--gold:#ffd166;--pink:#ff9ec4;--mut:#6c6490}
-*{box-sizing:border-box}
+*{box-sizing:border-box;touch-action:manipulation}
 html,body{margin:0;min-height:100%}
 body{background:var(--bg);color:var(--ink);font:17px/1.65 "DotGothic16","Noto Sans TC",sans-serif;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
 #snow{position:fixed;inset:0;pointer-events:none;z-index:0;image-rendering:pixelated}
@@ -33,7 +33,7 @@ body{background:var(--bg);color:var(--ink);font:17px/1.65 "DotGothic16","Noto Sa
 #puzzle{margin:16px 0 6px;display:flex;justify-content:center}
 form{display:flex;gap:8px;margin-top:10px}
 input{flex:1;min-width:0;font:inherit;font-size:18px;padding:8px 10px;border:3px solid var(--ink);background:#fff;color:var(--ink)}
-button{font:inherit;cursor:pointer;color:var(--ink);background:var(--mint);border:3px solid var(--ink);padding:8px 14px;box-shadow:0 4px 0 var(--ink)}
+button{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;font:inherit;cursor:pointer;color:var(--ink);background:var(--mint);border:3px solid var(--ink);padding:8px 14px;box-shadow:0 4px 0 var(--ink)}
 button:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
 button.sm{background:#fff;padding:4px 10px;font-size:15px}
 :focus-visible{outline:3px solid var(--red);outline-offset:2px}
@@ -126,8 +126,8 @@ const CONFIG = {
       text:"5237", target:137,
       ok:"對上了!第三道鎖打開了。" },
     { type:"hunt", title:"第 4 關:仔細找找看",
-      story:"5 個英文字母,被偷偷藏在夜景的各個角落。\n用手指(或滑鼠)在畫面上慢慢滑,找齊它們,照「從左到右」的順序輸入!",
-      hints:["答案是 5 個英文字母,分別藏在畫面的不同地方。","字的顏色跟背景很接近,把螢幕亮度調高會比較好找。","在畫面上慢慢滑動,滑過的地方會亮起來。夜空、樹林和雪地都找找看。"],
+      story:"5 個英文字母,被偷偷藏在夜景的各個角落。\n按住畫面就是手電筒,光會照在手指的左上方。慢慢滑動找齊它們,照「從左到右」的順序輸入!",
+      hints:["答案是 5 個英文字母,分別藏在畫面的不同地方。","字的顏色跟背景很接近,把螢幕亮度調高會比較好找。","按住畫面慢慢滑,光圈照到的地方會亮起來(在手指的左上方)。夜空、樹林和雪地都找找看。"],
       plain:"PIYEN", spots:[[6,8],[32,34],[58,66],[84,22],[112,68]],
       ok:"找到了!你的眼睛真厲害。" },
     { type:"platformer", title:"第 5 關:送禮物大冒險",
@@ -136,7 +136,7 @@ const CONFIG = {
       ok:"全部搬到了!聖誕樹亮起來了!" }
   ],
   finalTitle: "Merry Christmas!",
-  finalText: "恭喜曾小寶都過關啦!好棒(可以領一個摸摸頭)\n\n祝我的小寶貝聖誕節快樂 我愛你喔\n\n 抱抱陳37可以領通關獎品喔 \n\n37"
+  finalText: "恭喜曾小寶都過關啦!好棒\n\n(可以領一個摸摸頭)\n\n祝我的小寶貝聖誕節快樂 我愛你喔\n\n 可以找我拿禮物位置的提示了 \n\n37"
 };
 /* ============ 以下是遊戲程式,通常不用改 ============ */
 const $ = id => document.getElementById(id);
@@ -226,7 +226,15 @@ function align(l){
     }
     cx.putImageData(img,0,0); deg.textContent = sl.value + "°";
   }
-  sl.oninput = draw; m.onclick = () => { sl.value = (+sl.value+359)%360; draw(); }; p.onclick = () => { sl.value = (+sl.value+1)%360; draw(); };
+  sl.oninput = draw;
+  const hold = (btn, d) => { let t1 = 0, t2 = 0; const go = () => { sl.value = (+sl.value + d + 360) % 360; draw(); };
+    const stop = () => { clearTimeout(t1); clearInterval(t2); };
+    btn.style.touchAction = "none";
+    btn.addEventListener("pointerdown", e => { e.preventDefault(); stop(); go(); t1 = setTimeout(() => { t2 = setInterval(go, 45); }, 380); });
+    ["pointerup","pointerleave","pointercancel"].forEach(t => btn.addEventListener(t, stop));
+    btn.addEventListener("contextmenu", e => e.preventDefault());
+    btn.addEventListener("click", e => { if(e.detail===0) go(); }); };
+  hold(m,-1); hold(p,1);
   const ctl = el("div","ctl"); ctl.append(m,sl,p,deg); wrap.appendChild(ctl); draw(); return wrap;
 }
 
@@ -258,10 +266,14 @@ function hunt(l){
   r2.drawImage(base,0,0); hid.forEach(([x,y,lt]) => { r2.fillStyle = lt ? "#ef4b5f" : "#ffe28a"; r2.fillRect(x,y,1,1); });
   const cx = c.getContext("2d"); let pt = null;
   function draw(){ cx.drawImage(base,0,0);
-    if(pt){ cx.save(); cx.beginPath(); cx.arc(pt.x,pt.y,12,0,6.3); cx.clip(); cx.drawImage(rev,0,0); cx.restore();
-      cx.strokeStyle = "rgba(255,255,255,.4)"; cx.lineWidth = 1; cx.beginPath(); cx.arc(pt.x,pt.y,12,0,6.3); cx.stroke(); } }
+    if(pt){ const lx = pt.x-15, ly = pt.y-15;
+      cx.save(); cx.beginPath(); cx.arc(lx,ly,12,0,6.3); cx.clip(); cx.drawImage(rev,0,0); cx.restore();
+      cx.strokeStyle = "rgba(255,255,255,.4)"; cx.lineWidth = 1; cx.beginPath(); cx.arc(lx,ly,12,0,6.3); cx.stroke();
+      cx.lineCap = "round"; const hx = lx+(pt.x-lx)*.55, hy = ly+(pt.y-ly)*.55;
+      cx.strokeStyle = "#2b2146"; cx.lineWidth = 6; cx.beginPath(); cx.moveTo(pt.x,pt.y); cx.lineTo(hx,hy); cx.stroke();
+      cx.strokeStyle = "#e7ecfa"; cx.lineWidth = 3; cx.beginPath(); cx.moveTo(pt.x,pt.y); cx.lineTo(hx,hy); cx.stroke(); } }
   const at = e => { const r = c.getBoundingClientRect(); pt = {x:(e.clientX-r.left)*W/r.width, y:(e.clientY-r.top)*H/r.height}; draw(); };
-  c.addEventListener("pointermove", at); c.addEventListener("pointerdown", at);
+  c.addEventListener("pointermove", at); c.addEventListener("pointerdown", e => { try{ c.setPointerCapture(e.pointerId); }catch(_){} at(e); });
   ["pointerup","pointerleave","pointercancel"].forEach(t=>c.addEventListener(t, () => { pt = null; draw(); }));
   draw(); return c;
 }
