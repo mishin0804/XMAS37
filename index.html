@@ -23,7 +23,7 @@ body{background:var(--bg);color:var(--ink);font:17px/1.65 "DotGothic16","Noto Sa
 .guide{display:flex;gap:10px;align-items:flex-start}
 .dog{width:84px;height:84px;flex:none;color:var(--ink)}
 .dog *{stroke:var(--ink)}
-.dog .hat{fill:var(--red)}.dog .w{fill:#fff}.dog .f{fill:var(--ink)}.dog .t{fill:#e8cb9f}.dog .e{fill:#c9a06a}.dog .pk{fill:#ffb3c1;stroke:none}
+.dog .hat{fill:var(--red)}.dog .w{fill:#fff}.dog .f{fill:var(--ink)}.dog .t{fill:#f6cf84}.dog .e{fill:#dba153}.dog .m{fill:#fff2d4}.dog .tg{fill:#ff8fa3}.dog .hl{fill:#fff;stroke:none}.dog .pk{fill:#ffb3c1;stroke:none}
 .hop{animation:hop .5s steps(4)}
 @keyframes hop{50%{transform:translateY(-12px)}}
 .say{position:relative;flex:1;background:#fff;border:3px solid var(--ink);padding:8px 12px;white-space:pre-wrap;word-break:break-word}
@@ -39,6 +39,12 @@ button.sm{background:#fff;padding:4px 10px;font-size:15px}
 :focus-visible{outline:3px solid var(--red);outline-offset:2px}
 #msg{min-height:1.7em;margin:8px 0 0;color:var(--red);font-weight:bold}#msg.good{color:#1f9e7a}
 .shk{animation:shk .35s}@keyframes shk{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+#scene,#gc{display:block;width:100%;max-width:460px;image-rendering:pixelated;border:4px solid var(--ink);background:#1b2550}
+#scene{touch-action:none;cursor:crosshair}
+.gw{width:100%;max-width:460px}
+.pad{display:flex;gap:10px;margin-top:12px;user-select:none;-webkit-user-select:none}
+.pb{flex:1;font-size:22px;padding:14px 0;touch-action:none;background:#fff}
+.pb.j{flex:1.6;background:var(--pink)}
 .tools{display:flex;gap:10px;margin-top:14px}
 /* picross */
 .pg{display:grid;gap:3px;--c:46px}
@@ -95,14 +101,15 @@ input[type=range]{flex:1;padding:0;accent-color:var(--red);height:32px}
 <script>
 /* ============ 這裡改成你們的內容 ============
    type 說明:
-   picross  塗格子解圖,解開自動過關(grid 用 1 和 0 畫圖案)
-   morse    小狗叫聲摩斯密碼,答案是 word
-   align    兩層玻璃對齊,旋轉到 target 角度才看得到 text,輸入 text 過關
-   text     一般輸入答案。sha 是答案的 SHA-256 雜湊(網址加 ?make 可產生)
-   提醒:picross / morse / align 的答案會寫在程式裡,是「簡易保護」;
-         text 關卡用雜湊,看原始碼也看不到。 */
+   picross    塗格子解圖,解開自動過關(grid 用 1 和 0 畫圖案)
+   morse      小狗叫聲摩斯密碼,答案是 word
+   align      兩層玻璃對齊,轉到 target 角度才看得到 text,輸入 text 過關
+   hunt       在夜景裡藏一串字(plain 是答案,pos 是藏的位置 [x,y],畫面是 128x80 格)
+   platformer 平台跳躍,拿滿 5 個禮物走到聖誕樹就過關
+   text       一般輸入答案。sha 是答案的 SHA-256 雜湊(網址加 ?make 可產生)
+   提醒:除了 text 關卡,其餘答案都寫在程式裡,是「簡易保護」。 */
 const CONFIG = {
-  intro: "汪!我是波奇。聖誕老人的禮物袋被鎖住了,\n我們一起解開 5 道謎題吧!",
+  intro: "汪!我是小金毛。聖誕老人的禮物袋被鎖住了,\n我們一起解開 5 道謎題吧!",
   levels: [
     { type:"picross", title:"第 1 關:塗塗看",
       story:"左邊和上面的數字,代表那一行有幾格連續要塗滿。\n把格子塗出圖案吧!",
@@ -110,40 +117,41 @@ const CONFIG = {
       grid:["01010","11111","11111","01110","00100"],
       ok:"哇!是愛心!第一道鎖打開了。" },
     { type:"morse", title:"第 2 關:小狗的悄悄話",
-      story:"波奇用叫聲傳來暗號:短叫是「汪」,長叫是「嗷」,「/」代表換下一個字母。\n小提示:這是摩斯密碼喔!翻成英文單字吧。",
+      story:"小金毛用叫聲傳來暗號:短叫是「汪」,長叫是「嗷」,「/」代表換下一個字母。\n小提示:這是摩斯密碼喔!翻成英文單字吧。",
       hint:"摩斯密碼是用「短」和「長」組成字母,上網查一下對照表就能解。汪 = 短,嗷 = 長。",
       word:"XMAS",
-      ok:"翻譯成功!波奇開心地搖尾巴。" },
+      ok:"翻譯成功!小金毛開心地搖尾巴。" },
     { type:"align", title:"第 3 關:魔法玻璃",
       story:"兩片魔法玻璃疊在一起,看起來只有雜訊。\n轉動上面那片,轉到剛剛好,就會浮現 4 位數密碼!",
-      text:"1225", target:137,
+      text:"5237", target:137,
       ok:"對上了!第三道鎖打開了。" },
-    { type:"text", title:"第 4 關:GitHub 地下室",
-      story:"下一把鑰匙藏在這個 GitHub 專案裡。\n回到專案首頁,找到 secret.txt 這個檔案,點開它,把裡面的單字輸入。",
-      hint:"在專案的檔案列表裡找 secret.txt,點一下就能看到內容。",
-      sha:"4ac134964872c4b0e2027c2be20aa440fa4e699ba9c5b9f1929bdab52824e424",
-      ok:"地下室打開了!" },
-    { type:"text", title:"第 5 關:現實世界任務",
-      story:"最後一把鑰匙不在網路上!\n去找找我留給你的那張紙條,答案寫在上面。",
-      hint:"(這裡換成你藏紙條位置的線索)",
-      sha:"a1954b15a7459a2f7f6c03d87b73963830616feef7c93853fe5c05be996276bc",
-      ok:"所有鎖都解開了!" }
+    { type:"hunt", title:"第 4 關:仔細找找看",
+      story:"夜空和雪地裡,偷偷藏著一串英文字母。\n用手指(或滑鼠)在畫面上滑一滑,仔細找找看,找到後輸入它!",
+      hints:["答案是 5 個英文字母,藏在畫面的某個角落。","它的顏色跟背景很接近,把螢幕亮度調高會比較好找。","在畫面上慢慢滑動,滑過的地方會亮起來,試試看夜空的左上方。"],
+      plain:"PIYEN", pos:[14,12],
+      ok:"找到了!你的眼睛真厲害。" },
+    { type:"platformer", title:"第 5 關:送禮物大冒險",
+      story:"最後一關!小金毛要把 5 個禮物搬到聖誕樹下。\n左右按鈕移動,「跳」按鈕跳躍(電腦:方向鍵或 WASD + 空白鍵)。\n碰到尖刺或掉下去,會回到上一個存檔點喔!",
+      hint:"輕輕點一下跳躍鍵會小跳,按住會跳比較高。空隙最多 3 格,助跑起跳就能飛過去。",
+      ok:"全部搬到了!聖誕樹亮起來了!" }
   ],
   finalTitle: "Merry Christmas!",
-  finalText: "恭喜曾小寶都過關啦!好棒(可以領一個摸摸頭)\n\n祝我的小寶貝聖誕節快樂 我愛你喔\n\n 抱抱陳37可以領通關獎品喔 \n\n37"
+  finalText: "恭喜曾小寶都過關啦!好棒(可以領一個摸摸頭)\n\n祝我的小寶貝聖誕節快樂 我愛你喔\n\n 可以找我拿提示找你的禮物了 \n\n37"
 };
 /* ============ 以下是遊戲程式,通常不用改 ============ */
 const $ = id => document.getElementById(id);
 const el = (t,c,x) => { const e = document.createElement(t); if(c) e.className = c; if(x!=null) e.textContent = x; return e; };
 const norm = s => s.trim().toLowerCase().replace(/\s+/g,"");
 const DOG = '<svg viewBox="0 0 120 120" class="dog" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
- + '<path class="e" d="M24 52C11 49 6 70 14 85C23 90 31 77 31 62Z"/><path class="e" d="M96 52C109 49 114 70 106 85C97 90 89 77 89 62Z"/>'
- + '<path class="t" d="M20 70C20 45 40 37 60 37C80 37 100 45 100 70C100 92 82 101 60 101C38 101 20 92 20 70Z"/>'
- + '<ellipse class="pk" cx="37" cy="79" rx="6" ry="3.5"/><ellipse class="pk" cx="83" cy="79" rx="6" ry="3.5"/>'
- + '<circle class="f" cx="46" cy="69" r="2.6"/><circle class="f" cx="74" cy="69" r="2.6"/><ellipse class="f" cx="60" cy="75" rx="4.2" ry="3"/>'
- + '<path d="M60 78V81M60 81C57 85 53 84 52 81M60 81C63 85 67 84 68 81"/>'
- + '<path class="hat" d="M41 43C44 23 63 16 80 26C76 34 73 40 71 43C61 39 51 39 41 43Z"/>'
- + '<path class="w" d="M38 42C52 36 66 36 73 43C70 48 61 44 51 45C45 46 40 47 38 42Z"/><circle class="w" cx="82" cy="24" r="5"/></svg>';
+ + '<path class="e" d="M27 50C10 45 3 74 13 94C26 100 35 82 35 63Z"/><path class="e" d="M93 50C110 45 117 74 107 94C94 100 85 82 85 63Z"/>'
+ + '<path class="t" d="M17 69C17 43 37 33 60 33C83 33 103 43 103 69C103 95 85 105 60 105C35 105 17 95 17 69Z"/>'
+ + '<ellipse class="pk" cx="31" cy="83" rx="7" ry="4.5"/><ellipse class="pk" cx="89" cy="83" rx="7" ry="4.5"/>'
+ + '<ellipse class="m" cx="60" cy="86" rx="16" ry="12"/>'
+ + '<circle class="f" cx="43" cy="70" r="4.6"/><circle class="f" cx="77" cy="70" r="4.6"/><circle class="hl" cx="44.8" cy="68.2" r="1.7"/><circle class="hl" cx="78.8" cy="68.2" r="1.7"/>'
+ + '<ellipse class="f" cx="60" cy="79" rx="5.2" ry="3.6"/>'
+ + '<path d="M60 83V86M60 86C56 90 51 89 50 85M60 86C64 90 69 89 70 85"/><path class="tg" d="M56 90C56 99 64 99 64 90Z"/>'
+ + '<path class="hat" d="M41 39C44 19 63 12 80 22C76 30 73 36 71 39C61 35 51 35 41 39Z"/>'
+ + '<path class="w" d="M38 38C52 32 66 32 73 39C70 44 61 40 51 41C45 42 40 43 38 38Z"/><circle class="w" cx="82" cy="20" r="5"/></svg>';
 $("dog").innerHTML = DOG; $("fdog").innerHTML = DOG;
 
 async function sha(s){
@@ -222,16 +230,128 @@ function align(l){
   const ctl = el("div","ctl"); ctl.append(m,sl,p,deg); wrap.appendChild(ctl); draw(); return wrap;
 }
 
+/* ---- 關卡:夜景藏字 ---- */
+function hunt(l){
+  const W = 128, H = 80, c = el("canvas"); c.id = "scene"; c.width = W; c.height = H; c.setAttribute("aria-label","夜景,裡面藏著一串字母");
+  let seed = 7; const rnd = () => (seed = seed*16807 % 2147483647) / 2147483647;
+  const mk = () => { const x = document.createElement("canvas"); x.width = W; x.height = H; return x; };
+  const base = mk(), rev = mk(), b = base.getContext("2d");
+  ["#1b2550","#212d5a","#283662","#30406c","#3a4a78"].forEach((col,i)=>{ b.fillStyle = col; b.fillRect(0,i*13,W,14); });
+  for(let i=0;i<60;i++){ b.fillStyle = rnd()<.3?"#ffe9a8":"#cfd8ff"; b.globalAlpha = .4+rnd()*.6; b.fillRect(rnd()*W|0, rnd()*52|0, 1, 1); }
+  b.globalAlpha = 1; b.fillStyle = "#fff3c4"; b.beginPath(); b.arc(106,15,7,0,6.3); b.fill();
+  b.fillStyle = "#eadb9e"; b.fillRect(103,13,2,2); b.fillRect(108,17,2,2);
+  for(let x=0;x<W;x++){ const y = Math.round(62 + Math.sin(x/9)*3 + Math.sin(x/4)); b.fillStyle = "#e8efff"; b.fillRect(x,y,1,H-y); b.fillStyle = "#cdd9f5"; b.fillRect(x,y+9,1,H); }
+  const tree = (x,gy,h) => { b.fillStyle = "#5a3a2a"; b.fillRect(x-1,gy-2,3,3);
+    for(let r=0;r<h;r++){ const w = 1+Math.floor(r*.9)*2, y = gy-2-h+r; b.fillStyle = r%4===0?"#2a8a6a":"#1f6b57"; b.fillRect(x-(w>>1),y,w,1);
+      if(r>2 && rnd()<.16){ b.fillStyle = rnd()<.5?"#ef4b5f":"#ffd166"; b.fillRect(x-(w>>1)+Math.floor(rnd()*w),y,1,1); } }
+    b.fillStyle = "#fff"; b.fillRect(x,gy-2-h,1,1); };
+  [[8,66,16],[28,68,12],[50,67,18],[96,67,14],[120,66,16]].forEach(a=>tree(...a));
+  b.fillStyle = "#7a4b3a"; b.fillRect(66,56,20,12); b.fillStyle = "#ef4b5f"; b.fillRect(64,54,24,3); b.fillRect(67,51,18,3); b.fillRect(70,48,12,3);
+  b.fillStyle = "#fff"; b.fillRect(64,54,24,1); b.fillRect(67,51,18,1); b.fillRect(70,48,12,1);
+  b.fillStyle = "#ffd166"; b.fillRect(70,59,4,4); b.fillRect(79,59,4,4); b.fillStyle = "#4a2c22"; b.fillRect(75,61,3,7);
+  const m = mk(), mc = m.getContext("2d"); mc.fillStyle = "#fff"; mc.font = "bold 12px monospace"; mc.textBaseline = "top"; mc.fillText(l.plain.toUpperCase(), l.pos[0], l.pos[1]);
+  const d = mc.getImageData(0,0,W,H).data, r2 = rev.getContext("2d");
+  const px = []; for(let i=0;i<W*H;i++) if(d[i*4+3]>110) px.push([i%W, i/W|0]);
+  px.forEach(([x,y])=>{ b.fillStyle = "rgba(174,188,255,.09)"; b.fillRect(x,y,1,1); });
+  r2.drawImage(base,0,0); r2.fillStyle = "#ffe28a"; px.forEach(([x,y])=>r2.fillRect(x,y,1,1));
+  const cx = c.getContext("2d"); let pt = null;
+  function draw(){ cx.drawImage(base,0,0);
+    if(pt){ cx.save(); cx.beginPath(); cx.arc(pt.x,pt.y,12,0,6.3); cx.clip(); cx.drawImage(rev,0,0); cx.restore();
+      cx.strokeStyle = "rgba(255,255,255,.4)"; cx.lineWidth = 1; cx.beginPath(); cx.arc(pt.x,pt.y,12,0,6.3); cx.stroke(); } }
+  const at = e => { const r = c.getBoundingClientRect(); pt = {x:(e.clientX-r.left)*W/r.width, y:(e.clientY-r.top)*H/r.height}; draw(); };
+  c.addEventListener("pointermove", at); c.addEventListener("pointerdown", at);
+  ["pointerup","pointerleave","pointercancel"].forEach(t=>c.addEventListener(t, () => { pt = null; draw(); }));
+  draw(); return c;
+}
+/* ---- 關卡:平台跳躍 ---- */
+function platformer(l, done){
+  const T = 8, R = 12, C = 64, VW = 160, VH = 96, PW = 6, PH = 7, NEED = 5;
+  const g = Array.from({length:R}, () => Array(C).fill(" "));
+  const fill = (x1,x2,y1,y2,ch) => { for(let y=y1;y<=y2;y++) for(let x=x1;x<=x2;x++) g[y][x] = ch; };
+  fill(0,13,10,11,"#"); fill(17,27,10,11,"#"); fill(49,63,10,11,"#");
+  fill(31,33,8,8,"#"); fill(37,39,7,7,"#"); fill(43,45,6,6,"#"); fill(52,53,8,9,"#");
+  [22,23,57].forEach(x => g[9][x] = "^");
+  const gifts = [[10,8],[22,7],[38,5],[44,4],[53,6]].map(([x,y]) => ({x:x*T+1, y:y*T+1, got:false}));
+  const solid = (tx,ty) => tx<0 || tx>=C ? true : (ty<0 || ty>=R) ? false : g[ty][tx]==="#";
+  const hit = (x,y) => { for(let ty=Math.floor(y/T); ty<=Math.floor((y+PH-.01)/T); ty++) for(let tx=Math.floor(x/T); tx<=Math.floor((x+PW-.01)/T); tx++) if(solid(tx,ty)) return true; return false; };
+  const P = {x:2*T, y:10*T-PH-.01, vx:0, vy:0, g:false, f:1};
+  const K = {l:0, r:0, j:0}; let jp = false, buf = 0, coy = 0, sp = 2, got = 0, flash = 0, flashT = "", won = false, run = true, last = 0, acc = 0, raf = 0;
+  const stars = Array.from({length:26}, () => ({x:Math.random()*VW, y:Math.random()*60|0}));
+  const cv = el("canvas"); cv.id = "gc"; cv.width = VW; cv.height = VH; cv.setAttribute("aria-label","平台跳躍遊戲畫面");
+  const cx = cv.getContext("2d");
+  const wrap = el("div","gw"), pad = el("div","pad");
+  const mkBtn = (txt, cls, on, off) => { const b = el("button","pb "+cls,txt); b.type = "button"; b.setAttribute("aria-label",txt);
+    b.addEventListener("pointerdown", e => { e.preventDefault(); on(); }); ["pointerup","pointerleave","pointercancel"].forEach(t=>b.addEventListener(t, off)); return b; };
+  pad.append(mkBtn("◀","",()=>K.l=1,()=>K.l=0), mkBtn("▶","",()=>K.r=1,()=>K.r=0), mkBtn("跳","j",()=>{ if(!K.j) jp = true; K.j = 1; },()=>K.j=0));
+  wrap.append(cv,pad);
+  const kd = e => { const c = e.code; if(["ArrowLeft","KeyA","ArrowRight","KeyD","ArrowUp","KeyW","Space"].includes(c)) e.preventDefault(); else return;
+    if(c==="ArrowLeft"||c==="KeyA") K.l = 1; else if(c==="ArrowRight"||c==="KeyD") K.r = 1; else { if(!K.j) jp = true; K.j = 1; } };
+  const ku = e => { const c = e.code; if(c==="Space") e.preventDefault();
+    if(c==="ArrowLeft"||c==="KeyA") K.l = 0; else if(c==="ArrowRight"||c==="KeyD") K.r = 0; else if(["ArrowUp","KeyW","Space"].includes(c)) K.j = 0; };
+  addEventListener("keydown", kd); addEventListener("keyup", ku);
+  function die(){ P.x = sp*T; P.y = 10*T-PH-.01; P.vx = P.vy = 0; flash = 50; flashT = "再試一次!"; }
+  function step(){
+    if(won) return;
+    if(jp){ buf = 7; jp = false; }
+    P.vx = (K.r-K.l)*1.35; if(P.vx) P.f = P.vx>0?1:-1;
+    coy = P.g ? 6 : coy-1; buf--;
+    if(buf>0 && coy>0){ P.vy = -3.2; buf = 0; coy = 0; P.g = false; }
+    if(!K.j && P.vy<-1.4) P.vy = -1.4;
+    P.vy = Math.min(P.vy+.2, 4);
+    P.x += P.vx;
+    if(hit(P.x,P.y)) P.x = P.vx>0 ? Math.floor((P.x+PW)/T)*T-PW-.01 : (Math.floor(P.x/T)+1)*T;
+    P.y += P.vy; P.g = false;
+    if(hit(P.x,P.y)){ if(P.vy>0){ P.y = Math.floor((P.y+PH)/T)*T-PH-.01; P.g = true; } else P.y = (Math.floor(P.y/T)+1)*T; P.vy = 0; }
+    if(P.g) [2,18,49].forEach(c => { if(P.x>=c*T && c>sp) sp = c; });
+    if(P.y > R*T+16) return die();
+    for(let ty=Math.floor(P.y/T); ty<=Math.floor((P.y+PH-.01)/T); ty++) for(let tx=Math.floor(P.x/T); tx<=Math.floor((P.x+PW-.01)/T); tx++)
+      if(g[ty] && g[ty][tx]==="^" && P.y+PH > ty*T+3) return die();
+    gifts.forEach(q => { if(!q.got && Math.abs(P.x-q.x)<6 && Math.abs(P.y-q.y)<6){ q.got = true; got++; flash = 40; flashT = "禮物 "+got+"/"+NEED; } });
+    if(P.x+PW > 60*T+2 && P.x < 62*T && P.y+PH > 7*T){
+      if(got>=NEED){ won = true; flash = 200; flashT = "到達聖誕樹!"; setTimeout(() => { if(run) done(); }, 900); }
+      else if(flash<=0){ flash = 70; flashT = "還差 "+(NEED-got)+" 個禮物!"; } }
+    if(flash>0) flash--;
+  }
+  function draw(){
+    const cam = Math.max(0, Math.min(C*T-VW, Math.floor(P.x+PW/2-VW/2)));
+    ["#1b2550","#26335f","#324173"].forEach((col,i)=>{ cx.fillStyle = col; cx.fillRect(0,i*32,VW,32); });
+    cx.fillStyle = "#dfe8ff"; stars.forEach(s => cx.fillRect(((s.x-cam*.2)%VW+VW)%VW, s.y, 1, 1));
+    cx.save(); cx.translate(-cam,0);
+    for(let ty=0;ty<R;ty++) for(let tx=Math.max(0,Math.floor(cam/T)); tx<=Math.min(C-1,Math.floor((cam+VW)/T)); tx++){
+      const ch = g[ty][tx], x = tx*T, y = ty*T;
+      if(ch==="#"){ cx.fillStyle = "#7c9ee0"; cx.fillRect(x,y,T,T); cx.fillStyle = "#6a8ad0"; cx.fillRect(x,y+T-1,T,1);
+        if(!(ty>0 && g[ty-1][tx]==="#")){ cx.fillStyle = "#f6faff"; cx.fillRect(x,y,T,2); } }
+      else if(ch==="^"){ cx.fillStyle = "#e7ecfa"; cx.beginPath(); cx.moveTo(x,y+T); cx.lineTo(x+T/2,y+2); cx.lineTo(x+T,y+T); cx.fill(); } }
+    gifts.forEach(q => { if(q.got) return; cx.fillStyle = "#ef4b5f"; cx.fillRect(q.x,q.y,6,6); cx.fillStyle = "#ffd166"; cx.fillRect(q.x+2,q.y,2,6); cx.fillRect(q.x,q.y+2,6,2); });
+    const gx = 60*T+2; cx.fillStyle = "#1f8a6a"; cx.fillRect(gx+4,7*T+6,2,3);
+    [[7*T+4,6],[8*T+2,10],[9*T,14]].forEach(([y,w]) => { cx.fillStyle = "#2a8a6a"; cx.fillRect(gx+7-w/2,y,w,T-1); });
+    cx.fillStyle = got>=NEED ? "#ffd166" : "#8fa0c0"; cx.fillRect(gx+6,7*T,2,3);
+    if(got>=NEED){ cx.fillStyle = "#ef4b5f"; cx.fillRect(gx+2,8*T+3,1,1); cx.fillRect(gx+10,9*T+1,1,1); cx.fillStyle = "#ffd166"; cx.fillRect(gx+5,9*T+3,1,1); }
+    const x = Math.round(P.x), y = Math.round(P.y), f = P.f>0 ? 2 : 0;
+    cx.fillStyle = "#f6cf84"; cx.fillRect(x,y+2,6,5); cx.fillStyle = "#dba153"; cx.fillRect(x,y+2,1,3); cx.fillRect(x+5,y+2,1,3);
+    cx.fillStyle = "#ef4b5f"; cx.fillRect(x+1,y,4,2); cx.fillStyle = "#fff"; cx.fillRect(x+(P.f>0?0:4),y,2,1);
+    cx.fillStyle = "#2b2146"; cx.fillRect(x+1+f/2,y+3,1,1); cx.fillRect(x+3+f/2,y+3,1,1); cx.fillRect(x+2+f/2,y+5,2,1);
+    cx.restore();
+    cx.fillStyle = "#fff"; cx.font = "bold 8px monospace"; cx.textAlign = "left"; cx.fillText("GIFT "+got+"/"+NEED, 4, 10);
+    if(flash>0){ cx.textAlign = "center"; cx.fillStyle = "#ffd166"; cx.fillText(flashT, VW/2, 30); }
+  }
+  function frame(t){ if(!run) return; if(!last) last = t; acc += Math.min(50,t-last); last = t; while(acc>=16.67){ step(); acc -= 16.67; } draw(); raf = requestAnimationFrame(frame); }
+  raf = requestAnimationFrame(frame);
+  return {el:wrap, stop(){ run = false; cancelAnimationFrame(raf); removeEventListener("keydown",kd); removeEventListener("keyup",ku); }};
+}
+
 /* ---- 流程 ---- */
+let stopGame = null, hn = 0;
 function showLevel(){
+  if(stopGame){ stopGame(); stopGame = null; } hn = 0;
   const l = L(), pz = $("puzzle"); pz.innerHTML = ""; dots();
   $("in").value = ""; msg("");
-  if(l.type==="picross"){ pz.appendChild(picross(l, pass)); $("f").style.display = "none"; }
-  else{
-    $("f").style.display = "flex";
-    if(l.type==="morse") pz.appendChild(morse(l));
-    if(l.type==="align"){ pz.appendChild(align(l)); l.hint = l.hint || "角度大約落在 "+(l.target-30)+" 到 "+(l.target+30)+" 度之間,接近時中間會先變清楚。"; }
-  }
+  $("f").style.display = (l.type==="picross" || l.type==="platformer") ? "none" : "flex";
+  if(l.type==="picross") pz.appendChild(picross(l, pass));
+  if(l.type==="morse") pz.appendChild(morse(l));
+  if(l.type==="hunt") pz.appendChild(hunt(l));
+  if(l.type==="align"){ pz.appendChild(align(l)); l.hint = l.hint || "角度大約落在 "+(l.target-30)+" 到 "+(l.target+30)+" 度之間,接近時中間會先變清楚。"; }
+  if(l.type==="platformer"){ const r = platformer(l, pass); pz.appendChild(r.el); stopGame = r.stop; }
   say(l.title, l.story);
 }
 function pass(){
@@ -240,6 +360,7 @@ function pass(){
   say("", l.ok); setTimeout(showLevel, 1100);
 }
 function win(){
+  if(stopGame){ stopGame(); stopGame = null; }
   dots(); $("game").style.display = "none";
   $("fTitle").textContent = CONFIG.finalTitle; $("fText").textContent = CONFIG.finalText;
   $("final").style.display = "block"; confetti();
@@ -249,13 +370,13 @@ $("f").onsubmit = async e => {
   if(!v.trim()){ msg("先輸入答案再按送出喔"); return; }
   const l = L(); let ok;
   try{
-    ok = l.type==="morse" ? norm(v)===norm(l.word) : l.type==="align" ? norm(v)===norm(l.text) : (await sha(v))===l.sha;
+    const pl = l.plain ?? l.word ?? l.text; ok = pl!=null ? norm(v)===norm(pl) : (await sha(v))===l.sha;
   }catch(err){ msg("這個瀏覽器無法驗證答案,請用 Safari / Chrome 並透過 https 網址開啟。"); return; }
   if(ok){ msg("答對了!", true); $("in").blur(); pass(); }
-  else{ msg("答案不對,再試試看。卡住的話按「要提示」。"); shake(); say("波奇", "汪?好像不對喔,再想想看~", true); }
+  else{ msg("答案不對,再試試看。卡住的話按「要提示」。"); shake(); say("小金毛", "汪?好像不對喔,再想想看~", true); }
   seeBubble();
 };
-$("hintBtn").onclick = () => say("提示", L().hint || "再仔細看看題目~");
+$("hintBtn").onclick = () => { const l = L(), a = l.hints || [l.hint || "再仔細看看題目~"], i = Math.min(hn, a.length-1); say("提示"+(a.length>1?"("+(i+1)+"/"+a.length+")":""), a[i]); hn++; };
 $("resetBtn").onclick = () => { cur = 0; save(); showLevel(); };
 
 /* 管理工具 */
@@ -279,7 +400,7 @@ function confetti(){ if(calm) return; const cs = ["#ef4b5f","#ffd166","#5fd8b4",
 })();
 
 cur = Math.min(load(), CONFIG.levels.length-1);
-showLevel(); say("波奇", CONFIG.intro + "\n\n" + L().title + "\n" + L().story);
+showLevel(); say("小金毛", CONFIG.intro + "\n\n" + L().title + "\n" + L().story);
 </script>
 </body>
 </html>
