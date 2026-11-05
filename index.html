@@ -104,7 +104,7 @@ input[type=range]{flex:1;padding:0;accent-color:var(--red);height:32px}
    picross    塗格子解圖,解開自動過關(grid 用 1 和 0 畫圖案)
    morse      小狗叫聲摩斯密碼,答案是 word
    align      兩層玻璃對齊,轉到 target 角度才看得到 text,輸入 text 過關
-   hunt       在夜景裡藏一串字(plain 是答案,pos 是藏的位置 [x,y],畫面是 128x80 格)
+   hunt       在夜景裡把答案的每個字母分散藏起來(plain 是答案,spots 是每個字母的位置 [x,y],畫面是 128x80 格,請由左到右排)
    platformer 平台跳躍,拿滿 5 個禮物走到聖誕樹就過關
    text       一般輸入答案。sha 是答案的 SHA-256 雜湊(網址加 ?make 可產生)
    提醒:除了 text 關卡,其餘答案都寫在程式裡,是「簡易保護」。 */
@@ -126,9 +126,9 @@ const CONFIG = {
       text:"5237", target:137,
       ok:"對上了!第三道鎖打開了。" },
     { type:"hunt", title:"第 4 關:仔細找找看",
-      story:"夜空和雪地裡,偷偷藏著一串英文字母。\n用手指(或滑鼠)在畫面上滑一滑,仔細找找看,找到後輸入它!",
-      hints:["答案是 5 個英文字母,藏在畫面的某個角落。","它的顏色跟背景很接近,把螢幕亮度調高會比較好找。","在畫面上慢慢滑動,滑過的地方會亮起來,試試看夜空的左上方。"],
-      plain:"PIYEN", pos:[14,12],
+      story:"5 個英文字母,被偷偷藏在夜景的各個角落。\n用手指(或滑鼠)在畫面上慢慢滑,找齊它們,照「從左到右」的順序輸入!",
+      hints:["答案是 5 個英文字母,分別藏在畫面的不同地方。","字的顏色跟背景很接近,把螢幕亮度調高會比較好找。","在畫面上慢慢滑動,滑過的地方會亮起來。夜空、樹林和雪地都找找看。"],
+      plain:"PIYEN", spots:[[6,8],[32,34],[58,66],[84,22],[112,68]],
       ok:"找到了!你的眼睛真厲害。" },
     { type:"platformer", title:"第 5 關:送禮物大冒險",
       story:"最後一關!小金毛要把 5 個禮物搬到聖誕樹下。\n左右按鈕移動,「跳」按鈕跳躍(電腦:方向鍵或 WASD + 空白鍵)。\n碰到尖刺或掉下去,會回到上一個存檔點喔!",
@@ -136,7 +136,7 @@ const CONFIG = {
       ok:"全部搬到了!聖誕樹亮起來了!" }
   ],
   finalTitle: "Merry Christmas!",
-  finalText: "恭喜曾小寶都過關啦!好棒(可以領一個摸摸頭)\n\n祝我的小寶貝聖誕節快樂 我愛你喔\n\n 可以找我拿提示找你的禮物了 \n\n37"
+  finalText: "恭喜曾小寶都過關啦!好棒(可以領一個摸摸頭)\n\n祝我的小寶貝聖誕節快樂 我愛你喔\n\n 抱抱陳37可以領通關獎品喔 \n\n37"
 };
 /* ============ 以下是遊戲程式,通常不用改 ============ */
 const $ = id => document.getElementById(id);
@@ -249,11 +249,13 @@ function hunt(l){
   b.fillStyle = "#7a4b3a"; b.fillRect(66,56,20,12); b.fillStyle = "#ef4b5f"; b.fillRect(64,54,24,3); b.fillRect(67,51,18,3); b.fillRect(70,48,12,3);
   b.fillStyle = "#fff"; b.fillRect(64,54,24,1); b.fillRect(67,51,18,1); b.fillRect(70,48,12,1);
   b.fillStyle = "#ffd166"; b.fillRect(70,59,4,4); b.fillRect(79,59,4,4); b.fillStyle = "#4a2c22"; b.fillRect(75,61,3,7);
-  const m = mk(), mc = m.getContext("2d"); mc.fillStyle = "#fff"; mc.font = "bold 12px monospace"; mc.textBaseline = "top"; mc.fillText(l.plain.toUpperCase(), l.pos[0], l.pos[1]);
-  const d = mc.getImageData(0,0,W,H).data, r2 = rev.getContext("2d");
-  const px = []; for(let i=0;i<W*H;i++) if(d[i*4+3]>110) px.push([i%W, i/W|0]);
-  px.forEach(([x,y])=>{ b.fillStyle = "rgba(174,188,255,.09)"; b.fillRect(x,y,1,1); });
-  r2.drawImage(base,0,0); r2.fillStyle = "#ffe28a"; px.forEach(([x,y])=>r2.fillRect(x,y,1,1));
+  const m = mk(), mc = m.getContext("2d"), r2 = rev.getContext("2d"); mc.fillStyle = "#fff"; mc.font = "bold 12px monospace"; mc.textBaseline = "top";
+  const bd = b.getImageData(0,0,W,H).data, hid = [];
+  [...l.plain.toUpperCase()].forEach((ch,i) => { mc.clearRect(0,0,W,H); mc.fillText(ch, l.spots[i][0], l.spots[i][1]);
+    const d = mc.getImageData(0,0,W,H).data;
+    for(let k=0;k<W*H;k++) if(d[k*4+3]>110){ const lum = (bd[k*4]+bd[k*4+1]+bd[k*4+2])/3; hid.push([k%W, k/W|0, lum>170]); } });
+  hid.forEach(([x,y,lt]) => { b.fillStyle = lt ? "rgba(60,80,150,.08)" : "rgba(174,188,255,.06)"; b.fillRect(x,y,1,1); });
+  r2.drawImage(base,0,0); hid.forEach(([x,y,lt]) => { r2.fillStyle = lt ? "#ef4b5f" : "#ffe28a"; r2.fillRect(x,y,1,1); });
   const cx = c.getContext("2d"); let pt = null;
   function draw(){ cx.drawImage(base,0,0);
     if(pt){ cx.save(); cx.beginPath(); cx.arc(pt.x,pt.y,12,0,6.3); cx.clip(); cx.drawImage(rev,0,0); cx.restore();
