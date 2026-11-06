@@ -73,9 +73,33 @@ input[type=range]{flex:1;padding:0;accent-color:var(--red);height:32px}
 #final .dog{width:130px;height:130px}
 #adm{display:none;margin-top:20px;border:3px dashed #fff;color:#fff;padding:10px;word-break:break-all}
 @media (prefers-reduced-motion:reduce){.hop,.shk{animation:none}}
+#musicToggle {
+  position: fixed;
+  top: max(12px, env(safe-area-inset-top));
+  right: 12px;
+  z-index: 99999;
+  background: #fff;
+  color: #2b2146;
+  border: 3px solid #2b2146;
+  box-shadow: 3px 3px 0 #2b2146;
+  padding: 7px 12px;
+  font-family: "DotGothic16", sans-serif;
+  font-size: 13px;
+  border-radius: 4px;
+}
+
+#musicToggle:active {
+  transform: translateY(2px);
+  box-shadow: 1px 1px 0 #2b2146;
+}
 </style>
 </head>
 <body>
+<audio id="bgMusic" loop preload="auto">
+  <source src="./music/Last%20Christmas%20(8-Bit%20Version).mp3" type="audio/mpeg">
+</audio>
+
+<button id="musicToggle" type="button">♫ 音樂開啟</button>
 <canvas id="snow" aria-hidden="true"></canvas>
 <div class="wrap">
   <div class="top"><span class="px">XMAS QUEST</span><div class="dots" id="dots" aria-label="關卡進度"></div></div>
@@ -415,6 +439,49 @@ function confetti(){ if(calm) return; const cs = ["#ef4b5f","#ffd166","#5fd8b4",
 
 cur = Math.min(load(), CONFIG.levels.length-1);
 showLevel(); say("小金毛", CONFIG.intro + "\n\n" + L().title + "\n" + L().story);
+/* ---- 聖誕背景音樂 ---- */
+(() => {
+  const music = document.getElementById("bgMusic");
+  const btn = document.getElementById("musicToggle");
+
+  let enabled = true;
+  music.volume = 0.3;
+
+  async function playMusic() {
+    if (!enabled) return;
+
+    try {
+      await music.play();
+      btn.textContent = "♫ 音樂開啟";
+    } catch (error) {
+      btn.textContent = "♫ 點擊播放";
+    }
+  }
+
+  btn.addEventListener("click", async () => {
+    if (enabled) {
+      enabled = false;
+      music.pause();
+      btn.textContent = "♫ 音樂關閉";
+    } else {
+      enabled = true;
+      await playMusic();
+    }
+  });
+
+  // 進入遊戲時嘗試自動播放
+  playMusic();
+
+  // 瀏覽器阻擋自動播放時，首次互動後播放
+  const startMusic = () => {
+    if (enabled && music.paused) {
+      playMusic();
+    }
+  };
+
+  document.addEventListener("pointerdown", startMusic);
+  document.addEventListener("keydown", startMusic);
+})();
 </script>
 </body>
 </html>
